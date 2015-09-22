@@ -58,15 +58,17 @@ class TrigSerializer(TurtleSerializer):
 
         self.startDocument()
 
-        firstTime = True
         for store, (ordered_subjects, subjects, ref) in self._contexts.items():
             self._references = ref
             self._serialized = {}
             self.store = store
             self._subjects = subjects
 
-            if self.default_context and store.identifier==self.default_context:
-                self.write(self.indent() + '\n{')
+            print self.default_context, store.identifier
+            
+            inDefaultGraph=self.default_context is None or store.identifier==self.default_context
+            if inDefaultGraph:
+                self.depth -= 1
             else:
                 if isinstance(store.identifier, BNode):
                     iri = store.identifier.n3()
@@ -80,12 +82,15 @@ class TrigSerializer(TurtleSerializer):
             for subject in ordered_subjects:
                 if self.isDone(subject):
                     continue
-                if firstTime:
-                    firstTime = False
-                if self.statement(subject) and not firstTime:
+                if self.statement(subject):
                     self.write('\n')
             self.depth -= 1
-            self.write('}\n')
+            
+            if inDefaultGraph:
+                self.depth += 1
+                self.write('\n')
+            else:
+                self.write('}\n')
 
         self.endDocument()
         stream.write(u"\n".encode('ascii'))
